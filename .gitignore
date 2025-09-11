@@ -1,0 +1,8 @@
+# Node modules folder
+node_modules
+
+# Secret credentials
+serviceAccountKey.json
+
+# Log files
+npm-debug.log

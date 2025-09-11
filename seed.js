@@ -1,11 +1,15 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
 const geofire = require('geofire-common');
+require('dotenv').config(); 
+
+
+const PLACES_API_KEY = process.env.PLACES_API_KEY;
 
 
 const serviceAccount = require('./serviceAccountKey.json'); 
 
-const PLACES_API_KEY = 'AIzaSyC24C0CNxZZSSgJwieaRjGXYvAGrX6BF-k'; 
+
 
 const SEARCH_LOCATION = { lat: 13.15, lon: 77.61 }; //Bengaluru
 

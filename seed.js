@@ -1,22 +1,18 @@
+require('dotenv').config();
 const axios = require('axios');
 const admin = require('firebase-admin');
 const geofire = require('geofire-common');
 
 
 const serviceAccount = require('./serviceAccountKey.json'); 
-
-const PLACES_API_KEY = 'AIzaSyC24C0CNxZZSSgJwieaRjGXYvAGrX6BF-k'; 
-
-const SEARCH_LOCATION = { lat: 13.15, lon: 77.61 }; //Bengaluru
-
+const PLACES_API_KEY = process.env.PLACES_API_KEY; 
+const SEARCH_LOCATION = { lat: 12.9716, lon: 77.5946 }; // Your location
 const SEARCH_RADIUS = 5000;
-
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 const db = admin.firestore();
-
 
 async function fetchAndSeedCafes() {
   console.log("Starting to fetch cafes from Google Places API...");
@@ -25,17 +21,14 @@ async function fetchAndSeedCafes() {
     const headers = {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location'
+      'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.rating,places.editorialSummary'
     };
     const body = {
       "includedTypes": ["cafe", "coffee_shop"],
-      "maxResultCount": 20, // Max allowed is 20 per request
+      "maxResultCount": 20, 
       "locationRestriction": {
         "circle": {
-          "center": {
-            "latitude": SEARCH_LOCATION.lat,
-            "longitude": SEARCH_LOCATION.lon
-          },
+          "center": { "latitude": SEARCH_LOCATION.lat, "longitude": SEARCH_LOCATION.lon },
           "radius": SEARCH_RADIUS
         }
       }
@@ -54,23 +47,22 @@ async function fetchAndSeedCafes() {
     const batch = db.batch();
 
     places.forEach(place => {
-      
       const docRef = db.collection('cafes').doc(); 
-      
       const coordinates = {
         latitude: place.location.latitude,
         longitude: place.location.longitude
       };
-
-      
       const hash = geofire.geohashForLocation([coordinates.latitude, coordinates.longitude]);
 
+   
       const newCafe = {
         name: place.displayName.text,
         location: place.formattedAddress,
-        features: ['wifi'], 
+        features: ['wifi'],
         coordinates: new admin.firestore.GeoPoint(coordinates.latitude, coordinates.longitude),
         geohash: hash,
+        rating: place.rating || null, 
+        description: place.editorialSummary?.text || "No description available." 
       };
 
       batch.set(docRef, newCafe);
@@ -87,6 +79,5 @@ async function fetchAndSeedCafes() {
     }
   }
 }
-
 
 fetchAndSeedCafes();
